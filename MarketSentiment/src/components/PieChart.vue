@@ -1,4 +1,6 @@
-// src/components/PieChart.vue import { Pie } from 'vue-chartjs' import { Chart as ChartJS,
+<!-- // src/components/PieChart.vue 
+import { Pie } from 'vue-chartjs' 
+import { Chart as ChartJS,
 ArcElement, Tooltip, Legend, Title } from 'chart.js' ChartJS.register(ArcElement, Tooltip, Legend,
 Title) export default { name: 'PieChart', components: { Pie }, props: { chartData: { type: Object,
 required: true }, chartOptions: { type: Object, default: () => ({ responsive: true,
@@ -13,4 +15,11 @@ total = context.dataset.data.reduce((a, b) => a + b, 0); const percentage = Math
           options={this.chartOptions}
         />
       </div>
-) } }
+) } } -->
+
+<template>
+  <div class="container">
+    <h1>PieChart</h1>
+    <div class="search-box"></div>
+  </div>
+</template>
