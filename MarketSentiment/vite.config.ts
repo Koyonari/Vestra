@@ -1,4 +1,4 @@
-import path from 'node:path'
+import path from 'path'
 import vue from '@vitejs/plugin-vue'
 import autoprefixer from 'autoprefixer'
 import tailwind from 'tailwindcss'

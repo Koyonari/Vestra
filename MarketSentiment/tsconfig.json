@@ -8,11 +8,11 @@
       "path": "./tsconfig.app.json"
     }
   ],
-
   "compilerOptions": {
+    "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["src/*"]
     }
   }
 }
