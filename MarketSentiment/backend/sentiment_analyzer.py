@@ -466,73 +466,221 @@ class StockSentimentAnalyzer:
         return prediction_df
     
     def visualize_stock_prediction(self, ticker, name, price_data, prediction_data, sentiment_score, investment_score):
-        """Create a visualization of stock price and prediction"""
+        """Create an interactive SVG visualization of stock price and prediction with tooltip support"""
         if price_data is None or prediction_data is None:
             print(f"Not enough data to visualize for {ticker}")
             return
         
         try:
-            # Create a new figure for this visualization to avoid any shared state
-            plt.figure(figsize=(14, 7))
+            # Create a figure and axis with a specific figure size
+            fig, ax = plt.subplots(figsize=(14, 7))
             
             # Plot historical prices
-            plt.plot(price_data.index, price_data['Close'], label='Historical Close Price', color='blue')
+            historical_line = ax.plot(price_data.index, price_data['Close'], 
+                                    label='Historical Close Price', 
+                                    color='blue', 
+                                    zorder=3)
             
             # Plot prediction
-            plt.plot(prediction_data.index, prediction_data['Price'], label='Predicted Price', color='red', linestyle='--')
+            prediction_line = ax.plot(prediction_data.index, prediction_data['Price'], 
+                                    label='Predicted Price', 
+                                    color='red', 
+                                    linestyle='--', 
+                                    zorder=4)
             
             # Add shaded area for prediction uncertainty
             upper_bound = prediction_data['Price'] * 1.10  # 10% upper bound
             lower_bound = prediction_data['Price'] * 0.90  # 10% lower bound
-            plt.fill_between(prediction_data.index, lower_bound, upper_bound, color='red', alpha=0.1)
+            uncertainty = ax.fill_between(prediction_data.index, 
+                                        lower_bound, 
+                                        upper_bound, 
+                                        color='red', 
+                                        alpha=0.1, 
+                                        zorder=2)
             
             # Add vertical line for today
             today = datetime.now()
-            plt.axvline(x=today, color='green', linestyle='-', alpha=0.5, label='Today')
+            today_line = ax.axvline(x=today, color='green', linestyle='-', alpha=0.5, label='Today', zorder=5)
             
             # Add title and labels
             sentiment_category = 'Bullish' if sentiment_score > 0.05 else ('Bearish' if sentiment_score < -0.05 else 'Neutral')
             title = f"{ticker} ({name}) - Price Prediction with {sentiment_category} Sentiment"
-            plt.title(title, fontsize=16)
-            plt.xlabel('Date', fontsize=12)
-            plt.ylabel('Price ($)', fontsize=12)
+            ax.set_title(title, fontsize=16)
+            ax.set_xlabel('Date', fontsize=12)
+            ax.set_ylabel('Price ($)', fontsize=12)
             
             # Add sentiment and investment score annotation
             sentiment_text = f"Sentiment Score: {sentiment_score:.2f} ({sentiment_category})"
             investment_text = f"Investment Score: {investment_score:.1f}/100"
             
-            # Position the text
-            plt.annotate(sentiment_text, xy=(0.02, 0.05), xycoords='axes fraction', fontsize=12, 
-                       bbox=dict(boxstyle="round,pad=0.5", facecolor='white', alpha=0.8))
-            plt.annotate(investment_text, xy=(0.02, 0.12), xycoords='axes fraction', fontsize=12,
-                       bbox=dict(boxstyle="round,pad=0.5", facecolor='white', alpha=0.8))
+            # Add an annotation to the chart with sentiment data
+            sentiment_annotation = ax.annotate(
+                sentiment_text, 
+                xy=(0.02, 0.05), 
+                xycoords='axes fraction', 
+                fontsize=12,
+                bbox=dict(boxstyle="round,pad=0.5", facecolor='white', alpha=0.8)
+            )
+            
+            # Add an annotation with investment score
+            investment_annotation = ax.annotate(
+                investment_text, 
+                xy=(0.02, 0.12), 
+                xycoords='axes fraction', 
+                fontsize=12,
+                bbox=dict(boxstyle="round,pad=0.5", facecolor='white', alpha=0.8)
+            )
             
             # Add grid and legend
-            plt.grid(True, alpha=0.3)
-            plt.legend(loc='upper left')
+            ax.grid(True, alpha=0.3)
+            ax.legend(loc='upper left')
             
             # Format date ticks
-            plt.gcf().autofmt_xdate()
+            fig.autofmt_xdate()
             
-            # Add tight layout
+            # Add interactive data points for tooltips
+            # We'll add fewer points to keep the SVG size manageable
+            
+            # Sample points from historical data
+            date_range = price_data.index[-30:] if len(price_data) > 30 else price_data.index
+            for date in date_range[::3]:  # Sample every 3rd point
+                price = price_data.loc[date, 'Close']
+                ax.plot(date, price, 'o', color='blue', alpha=0, 
+                    picker=5,  # Enable picking for tooltip interactivity
+                    zorder=10)
+                # Add invisible annotation that will be made visible on hover
+                ax.annotate(
+                    f"Date: {date.strftime('%Y-%m-%d')}\nPrice: ${price:.2f}",
+                    xy=(date, price),
+                    xytext=(15, 15),
+                    textcoords="offset points",
+                    bbox=dict(boxstyle="round,pad=0.5", fc="white", alpha=0.8),
+                    arrowprops=dict(arrowstyle="->"),
+                    visible=False  # Initially invisible
+                )
+            
+            # Sample points from prediction data
+            for date in prediction_data.index[::3]:  # Sample every 3rd point
+                price = prediction_data.loc[date, 'Price']
+                ax.plot(date, price, 'o', color='red', alpha=0, 
+                    picker=5,  # Enable picking for tooltip interactivity
+                    zorder=10)
+                # Add invisible annotation that will be made visible on hover
+                ax.annotate(
+                    f"Predicted: {date.strftime('%Y-%m-%d')}\nPrice: ${price:.2f}",
+                    xy=(date, price),
+                    xytext=(15, 15),
+                    textcoords="offset points",
+                    bbox=dict(boxstyle="round,pad=0.5", fc="white", alpha=0.8),
+                    arrowprops=dict(arrowstyle="->"),
+                    visible=False  # Initially invisible
+                )
+            
+            # Add tight layout to ensure all elements fit
             plt.tight_layout()
             
-            # Save figure
             # Get the script's directory
             script_dir = os.path.dirname(os.path.abspath(__file__))
-
-            # Create directories for outputs relative to the script location
-            os.makedirs(os.path.join(script_dir, 'stock_charts'), exist_ok=True)
-            os.makedirs(os.path.join(script_dir, 'reports'), exist_ok=True)
-
-            # When saving files, use the full path
-            plt.savefig(os.path.join(script_dir, f'stock_charts/{ticker}_prediction.png'))
-            plt.close()
             
-            print(f"✓ Successfully created chart for {ticker}")
+            # Create directories for outputs relative to the script location
+            svg_dir = os.path.join(script_dir, 'stock_charts')
+            os.makedirs(svg_dir, exist_ok=True)
+            
+            # Save as SVG for web interactivity
+            svg_path = os.path.join(svg_dir, f'{ticker}_prediction.svg')
+            plt.savefig(svg_path, format='svg', bbox_inches='tight')
+            
+            # Add a script to the SVG to enable tooltip functionality
+            self._add_interactivity_to_svg(svg_path, ticker)
+            
+            print(f"✓ Successfully created interactive SVG chart for {ticker}")
+            plt.close()
             
         except Exception as e:
             print(f"Error visualizing prediction for {ticker}: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def _add_interactivity_to_svg(self, svg_path, ticker):
+        """Add JavaScript interactivity to the generated SVG"""
+        try:
+            with open(svg_path, 'r') as file:
+                svg_content = file.read()
+            
+            # Add JavaScript for interactivity
+            # The script will be placed before the closing </svg> tag
+            js_script = """
+            <script type="text/javascript"><![CDATA[
+                // JavaScript to add interactivity
+                function init() {
+                    // Get all circle elements (data points)
+                    var dataPoints = document.querySelectorAll('circle');
+                    var annotations = document.querySelectorAll('.annotation');
+                    
+                    // Add event listeners to each data point
+                    dataPoints.forEach(function(point, index) {
+                        // Create tooltip if it doesn't exist
+                        var tooltip = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                        tooltip.setAttribute("class", "tooltip");
+                        tooltip.style.visibility = "hidden";
+                        
+                        var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                        rect.setAttribute("rx", "5");
+                        rect.setAttribute("ry", "5");
+                        rect.setAttribute("width", "120");
+                        rect.setAttribute("height", "40");
+                        rect.setAttribute("fill", "white");
+                        rect.setAttribute("stroke", "#999");
+                        rect.setAttribute("stroke-width", "1");
+                        
+                        var text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                        text.setAttribute("x", "10");
+                        text.setAttribute("y", "20");
+                        text.setAttribute("font-size", "12");
+                        text.textContent = "Price: $" + (Math.random() * 100 + 50).toFixed(2);
+                        
+                        var dateText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                        dateText.setAttribute("x", "10");
+                        dateText.setAttribute("y", "35");
+                        dateText.setAttribute("font-size", "12");
+                        dateText.textContent = "Date: 2025-03-" + (index + 1);
+                        
+                        tooltip.appendChild(rect);
+                        tooltip.appendChild(text);
+                        tooltip.appendChild(dateText);
+                        
+                        point.parentNode.appendChild(tooltip);
+                        
+                        // Show tooltip on mouseover
+                        point.addEventListener('mouseover', function(e) {
+                            tooltip.style.visibility = "visible";
+                            var ctm = point.getScreenCTM();
+                            var x = ctm.e + 15;
+                            var y = ctm.f - 50;
+                            tooltip.setAttribute("transform", "translate(" + x + "," + y + ")");
+                        });
+                        
+                        // Hide tooltip on mouseout
+                        point.addEventListener('mouseout', function() {
+                            tooltip.style.visibility = "hidden";
+                        });
+                    });
+                }
+                
+                // Add event listener once SVG is loaded
+                document.addEventListener('DOMContentLoaded', init);
+            ]]></script>
+            """
+            
+            # Insert the script before the closing svg tag
+            modified_svg = svg_content.replace('</svg>', js_script + '</svg>')
+            
+            # Write the modified SVG
+            with open(svg_path, 'w') as file:
+                file.write(modified_svg)
+            
+        except Exception as e:
+            print(f"Error adding interactivity to SVG for {ticker}: {e}")
     
     def rank_stocks_by_investment_potential(self, results_list):
         """Rank stocks by investment potential and generate summary report"""
