@@ -8,6 +8,9 @@ const props = defineProps<{
 
 const chartData = ref<{ date: string; price: number }[]>([])
 const predictionData = ref<{ date: string; price: number }[]>([])
+const upperBoundData = ref<{ date: string; price: number }[]>([])
+const lowerBoundData = ref<{ date: string; price: number }[]>([])
+const stockInfo = ref<any>(null)
 const isLoading = ref(true)
 
 // Computed properties for chart data structure
@@ -27,8 +30,8 @@ const chartDataset = computed(() => {
         borderColor: '#c87941',
         backgroundColor: 'rgba(200, 121, 65, 0.1)',
         borderWidth: 2,
-        pointRadius: 3,
-        pointHoverRadius: 8,
+        pointRadius: 2,
+        pointHoverRadius: 6,
         tension: 0.4,
       },
       {
@@ -41,8 +44,36 @@ const chartDataset = computed(() => {
         backgroundColor: 'rgba(76, 175, 80, 0.1)',
         borderWidth: 2,
         borderDash: [5, 5],
-        pointRadius: 3,
-        pointHoverRadius: 8,
+        pointRadius: 2,
+        pointHoverRadius: 6,
+        tension: 0.4,
+      },
+      {
+        label: 'Upper Bound',
+        data: [
+          ...Array(chartData.value.length).fill(null),
+          ...upperBoundData.value.map((item) => item.price),
+        ],
+        borderColor: 'rgba(76, 175, 80, 0.3)',
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderDash: [2, 2],
+        pointRadius: 0,
+        fill: false,
+        tension: 0.4,
+      },
+      {
+        label: 'Lower Bound',
+        data: [
+          ...Array(chartData.value.length).fill(null),
+          ...lowerBoundData.value.map((item) => item.price),
+        ],
+        borderColor: 'rgba(200, 121, 65, 0.3)',
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderDash: [2, 2],
+        pointRadius: 0,
+        fill: false,
         tension: 0.4,
       },
     ],
@@ -65,6 +96,10 @@ const chartOptions = computed(() => {
         grid: {
           display: false,
         },
+        ticks: {
+          // Display fewer x-axis labels for cleaner look
+          maxTicksLimit: 10,
+        },
       },
     },
     plugins: {
@@ -82,79 +117,114 @@ const chartOptions = computed(() => {
       legend: {
         display: true,
         position: 'top',
+        labels: {
+          // Hide the upper and lower bound labels
+          filter: (legendItem: any) => {
+            return !['Upper Bound', 'Lower Bound'].includes(legendItem.text)
+          },
+        },
       },
     },
   }
 })
 
-// Function to get prediction info from mock data
-const getPredictionInfo = (symbol: string) => {
-  // This is a simplified version - in a real app you'd get this from an API or store
-  const predictionMap: { [key: string]: { direction: string; prediction: number } } = {
-    AAPL: { direction: 'increase', prediction: 10 },
-    MSFT: { direction: 'increase', prediction: 6 },
-    AMZN: { direction: 'increase', prediction: 8 },
-    TSLA: { direction: 'decrease', prediction: 12 },
-  }
-
-  return predictionMap[symbol] || { direction: 'increase', prediction: 5 }
-}
-
 // Function to fetch stock chart data
 const fetchChartData = async (symbol: string) => {
   isLoading.value = true
   try {
-    // In a real application, this would be an API call
-    // For now, we'll use mock data
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    // Generate mock data for the chart
-    const mockData = []
-    const today = new Date()
-    for (let i = 30; i >= 0; i--) {
-      const date = new Date(today)
-      date.setDate(date.getDate() - i)
-      // Base value with some realistic fluctuations
-      const baseValue = symbol === 'AAPL' ? 175 : 160
-      const randomFactor = Math.sin(i / 3) * 10 + (Math.random() - 0.5) * 8
-      mockData.push({
-        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        price: +(baseValue + randomFactor).toFixed(2),
-      })
+    // Direct path to the AAPL_data.json file
+    const response = await fetch(`/stock_data/${symbol}_data.json`)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch data for ${symbol}`)
     }
-    chartData.value = mockData
 
-    // Generate prediction data for the next 7 days
-    const predictionMockData = []
-    // Get the last historical price as a starting point
-    const lastPrice = mockData[mockData.length - 1].price
+    const data = await response.json()
 
-    // Use the predictions data from your StockPredictionList component
-    // to determine the prediction trend
-    const predictionInfo = getPredictionInfo(symbol)
-    const direction = predictionInfo.direction === 'increase' ? 1 : -1
-    const predictionPercent = predictionInfo.prediction / 100
-
-    for (let i = 1; i <= 7; i++) {
-      const date = new Date(today)
-      date.setDate(date.getDate() + i)
-
-      // Calculate predicted price with some randomness
-      // The further into the future, the more the prediction percentage applies
-      const progressFactor = i / 7
-      const predictedChange = lastPrice * predictionPercent * progressFactor * direction
-      const dailyRandomness = (Math.random() - 0.5) * 2
-
-      predictionMockData.push({
-        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        price: +(lastPrice + predictedChange + dailyRandomness).toFixed(2),
-      })
+    // Set the chart data
+    chartData.value = data.historical_data
+    predictionData.value = data.prediction.data
+    upperBoundData.value = data.prediction.upper_bound
+    lowerBoundData.value = data.prediction.lower_bound
+    stockInfo.value = {
+      name: data.name,
+      sentiment: data.sentiment,
     }
-    predictionData.value = predictionMockData
   } catch (error) {
     console.error('Error fetching chart data:', error)
+    // Fall back to mock data if real data isn't available
+    generateMockData(symbol)
   } finally {
     isLoading.value = false
+  }
+}
+
+// Fallback to generate mock data if API call fails
+const generateMockData = (symbol: string) => {
+  // Generate mock data for the chart
+  const mockData = []
+  const today = new Date()
+  for (let i = 30; i >= 0; i--) {
+    const date = new Date(today)
+    date.setDate(date.getDate() - i)
+    // Base value with some realistic fluctuations
+    const baseValue = symbol === 'AAPL' ? 175 : 160
+    const randomFactor = Math.sin(i / 3) * 10 + (Math.random() - 0.5) * 8
+    mockData.push({
+      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      price: +(baseValue + randomFactor).toFixed(2),
+    })
+  }
+  chartData.value = mockData
+
+  // Generate prediction data for the next 7 days
+  const predictionMockData = []
+  const upperBoundMockData = []
+  const lowerBoundMockData = []
+
+  // Get the last historical price as a starting point
+  const lastPrice = mockData[mockData.length - 1].price
+
+  // Mock sentiment direction (positive or negative)
+  const direction = Math.random() > 0.5 ? 1 : -1
+  const predictionPercent = 0.05 // 5% change
+
+  for (let i = 1; i <= 7; i++) {
+    const date = new Date(today)
+    date.setDate(date.getDate() + i)
+
+    // Calculate predicted price with some randomness
+    const progressFactor = i / 7
+    const predictedChange = lastPrice * predictionPercent * progressFactor * direction
+    const dailyRandomness = (Math.random() - 0.5) * 2
+    const predictedPrice = +(lastPrice + predictedChange + dailyRandomness).toFixed(2)
+
+    predictionMockData.push({
+      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      price: predictedPrice,
+    })
+
+    upperBoundMockData.push({
+      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      price: +(predictedPrice * 1.05).toFixed(2), // 5% above prediction
+    })
+
+    lowerBoundMockData.push({
+      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      price: +(predictedPrice * 0.95).toFixed(2), // 5% below prediction
+    })
+  }
+
+  predictionData.value = predictionMockData
+  upperBoundData.value = upperBoundMockData
+  lowerBoundData.value = lowerBoundMockData
+
+  stockInfo.value = {
+    name: symbol,
+    sentiment: {
+      score: direction * 0.2,
+      category: direction > 0 ? 'Bullish' : 'Bearish',
+      investment_score: 50 + direction * 10,
+    },
   }
 }
 
@@ -167,7 +237,8 @@ watch(
 )
 
 onMounted(() => {
-  fetchChartData(props.stockSymbol)
+  // Initialize with AAPL data
+  fetchChartData('AAPL')
 })
 </script>
 
@@ -177,6 +248,26 @@ onMounted(() => {
       <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-copper"></div>
     </div>
     <div v-else class="h-full w-full">
+      <div v-if="stockInfo" class="mb-4">
+        <h3 class="text-lg font-bold">{{ stockInfo.name }} ({{ props.stockSymbol }})</h3>
+        <div class="flex items-center mt-1">
+          <span class="font-medium mr-2">Sentiment:</span>
+          <span
+            :class="{
+              'text-green-500': stockInfo.sentiment.category === 'Bullish',
+              'text-red-500': stockInfo.sentiment.category === 'Bearish',
+              'text-gray-500': stockInfo.sentiment.category === 'Neutral',
+            }"
+          >
+            {{ stockInfo.sentiment.category }}
+            ({{ stockInfo.sentiment.score.toFixed(2) }})
+          </span>
+          <span class="ml-4 font-medium">Investment Score:</span>
+          <span class="ml-1 font-bold"
+            >{{ stockInfo.sentiment.investment_score.toFixed(1) }}/100</span
+          >
+        </div>
+      </div>
       <Line :data="chartDataset" :options="chartOptions" />
     </div>
   </div>

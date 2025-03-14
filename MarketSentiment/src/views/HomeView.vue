@@ -1,53 +1,79 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { LineChart, ChevronDown, ChevronUp, TrendingUp, TrendingDown } from 'lucide-vue-next'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible'
-import StockChart from '../components/StockChart.vue'
-import StockPredictionList from '../components/StockPredictionList.vue'
-import SentimentTable from '../components/SentimentTable.vue'
+import { ref, onMounted, watchEffect } from 'vue'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TrendingUp, TrendingDown, LineChart } from 'lucide-vue-next'
+import StockChart from '@/components/StockChart.vue'
+import StockPredictionList from '@/components/StockPredictionList.vue'
+import SentimentTable from '@/components/SentimentTable.vue'
 
-// Selected stock data
+// State variables
 const selectedStock = ref('AAPL')
-interface StockData {
-  symbol: string
-  name: string
-  currentPrice: number
-  change: number
-  changePercent: number
-}
-
-const stockData = ref<StockData | null>(null)
 const isLoading = ref(true)
-const sentimentExpanded = ref(false)
+const stockData = ref<any>(null)
+const selectedTimeframe = ref('1M')
 
 // Fetch stock data function
 const fetchStockData = async (symbol: string) => {
   isLoading.value = true
   try {
-    // In a real application, this would be an API call
-    // For now, we'll simulate loading
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    const response = await fetch(`/stock_data/${symbol}_data.json`)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch data for ${symbol}`)
+    }
+
+    const data = await response.json()
+
+    // Calculate the current price (last historical price)
+    const historicalData = data.historical_data
+    const lastPrice = historicalData[historicalData.length - 1].price
+    const prevPrice = historicalData[historicalData.length - 2].price
+    const change = lastPrice - prevPrice
+    const changePercent = (change / prevPrice) * 100
+
     stockData.value = {
-      symbol,
-      name: symbol === 'AAPL' ? 'Apple Inc.' : symbol === 'AMZN' ? 'Amazon.com Inc.' : symbol,
-      currentPrice: symbol === 'AAPL' ? 187.62 : 178.15,
-      change: symbol === 'AAPL' ? 1.23 : 0.87,
-      changePercent: symbol === 'AAPL' ? 0.66 : 0.49,
+      name: data.name,
+      currentPrice: lastPrice,
+      change: change,
+      changePercent: changePercent,
+      sentiment: data.sentiment,
     }
   } catch (error) {
     console.error('Error fetching stock data:', error)
+    // Provide fallback data
+    stockData.value = {
+      name: symbol === 'AAPL' ? 'Apple Inc.' : symbol,
+      currentPrice: 212.34,
+      change: -3.3,
+      changePercent: -1.53,
+      sentiment: {
+        category: 'Neutral',
+        score: 0.0,
+        investment_score: 50,
+      },
+    }
   } finally {
     isLoading.value = false
   }
 }
 
-// Toggle sentiment section
-const toggleSentiment = () => {
-  sentimentExpanded.value = !sentimentExpanded.value
+// Format price to ensure proper decimal display
+const formatPrice = (price: number) => {
+  return price.toFixed(2)
 }
+
+// Handle timeframe change
+const handleTimeframeChange = (timeframe: string) => {
+  selectedTimeframe.value = timeframe
+  // You could implement additional logic here to adjust chart data based on timeframe
+}
+
+// Watch for changes in selected stock
+watchEffect(() => {
+  if (selectedStock.value) {
+    fetchStockData(selectedStock.value)
+  }
+})
 
 onMounted(() => {
   fetchStockData(selectedStock.value)
@@ -68,20 +94,20 @@ onMounted(() => {
               <CardTitle class="text-xl font-bold">{{ selectedStock }} Stock Chart</CardTitle>
               <CardDescription v-if="stockData" class="flex items-center gap-2">
                 <span>{{ stockData.name }}</span>
-                <span class="font-semibold">{{ stockData.currentPrice }}</span>
+                <span class="font-semibold">${{ formatPrice(stockData.currentPrice) }}</span>
                 <span
                   :class="stockData.change > 0 ? 'text-green-500' : 'text-red-500'"
                   class="flex items-center text-sm"
                 >
                   <TrendingUp v-if="stockData.change > 0" class="h-4 w-4 mr-1" />
                   <TrendingDown v-else class="h-4 w-4 mr-1" />
-                  {{ stockData.change > 0 ? '+' : '' }}{{ stockData.change }} ({{
+                  {{ stockData.change > 0 ? '+' : '' }}{{ stockData.change.toFixed(2) }} ({{
                     stockData.change > 0 ? '+' : ''
-                  }}{{ stockData.changePercent }}%)
+                  }}{{ stockData.changePercent.toFixed(2) }}%)
                 </span>
               </CardDescription>
             </div>
-            <Tabs defaultValue="1M" class="w-auto">
+            <Tabs defaultValue="1M" class="w-auto" @update:value="handleTimeframeChange">
               <TabsList>
                 <TabsTrigger value="1D">1D</TabsTrigger>
                 <TabsTrigger value="1W">1W</TabsTrigger>
