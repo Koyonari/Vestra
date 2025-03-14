@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 </script>
@@ -7,7 +6,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 <template>
   <SidebarProvider>
     <AppSidebar />
-    <main>
+    <main class="p-4">
       <SidebarTrigger />
       <RouterView />
     </main>
