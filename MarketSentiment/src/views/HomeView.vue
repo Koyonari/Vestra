@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watchEffect } from 'vue'
+import { ref, onMounted, computed, watchEffect } from 'vue'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TrendingUp, TrendingDown, LineChart } from 'lucide-vue-next'
@@ -12,12 +12,15 @@ const selectedStock = ref('AAPL')
 const isLoading = ref(true)
 const stockData = ref<any>(null)
 const selectedTimeframe = ref('1M')
+const currentPrice = ref(0)
 
 // Fetch stock data function
 const fetchStockData = async (symbol: string) => {
   isLoading.value = true
   try {
-    const response = await fetch(`/stock_data/${symbol}_data.json`)
+    // Since API is not ready, directly use the local JSON files
+    const response = await fetch(`/backend/stock_data/${symbol}_data.json`)
+
     if (!response.ok) {
       throw new Error(`Failed to fetch data for ${symbol}`)
     }
@@ -33,25 +36,75 @@ const fetchStockData = async (symbol: string) => {
 
     stockData.value = {
       name: data.name,
+      ticker: data.ticker,
       currentPrice: lastPrice,
       change: change,
       changePercent: changePercent,
       sentiment: data.sentiment,
+      historical_data: data.historical_data,
+      prediction: data.prediction,
+      last_updated: data.last_updated,
     }
+
+    currentPrice.value = lastPrice
   } catch (error) {
     console.error('Error fetching stock data:', error)
-    // Provide fallback data
-    stockData.value = {
-      name: symbol === 'AAPL' ? 'Apple Inc.' : symbol,
-      currentPrice: 212.34,
-      change: -3.3,
-      changePercent: -1.53,
+    // Use the hardcoded data from AAPL_data.json as fallback
+    const fallbackData = {
+      ticker: 'AAPL',
+      name: 'Apple Inc.',
       sentiment: {
-        category: 'Neutral',
-        score: 0.0,
-        investment_score: 50,
+        score: 0.09,
+        category: 'Bullish',
+        investment_score: 58.9,
       },
+      historical_data: [
+        { date: '2025-03-14', price: 212.34 },
+        // Include a few recent data points for simplicity
+        { date: '2025-03-13', price: 209.68 },
+        { date: '2025-03-12', price: 216.98 },
+        { date: '2025-03-11', price: 220.84 },
+        { date: '2025-03-10', price: 227.48 },
+      ],
+      prediction: {
+        data: [
+          { date: '2025-03-15', price: 212.34 },
+          { date: '2025-03-16', price: 212.38 },
+          { date: '2025-03-17', price: 210.1 },
+          { date: '2025-03-18', price: 210.13 },
+          { date: '2025-03-19', price: 208.91 },
+        ],
+        upper_bound: [
+          { date: '2025-03-15', price: 233.57 },
+          { date: '2025-03-16', price: 233.62 },
+          { date: '2025-03-17', price: 231.11 },
+          { date: '2025-03-18', price: 231.14 },
+          { date: '2025-03-19', price: 229.8 },
+        ],
+        lower_bound: [
+          { date: '2025-03-15', price: 191.11 },
+          { date: '2025-03-16', price: 191.14 },
+          { date: '2025-03-17', price: 189.09 },
+          { date: '2025-03-18', price: 189.11 },
+          { date: '2025-03-19', price: 188.02 },
+        ],
+      },
+      last_updated: '2025-03-15 00:31:20',
     }
+
+    stockData.value = {
+      name: fallbackData.name,
+      ticker: fallbackData.ticker,
+      currentPrice: fallbackData.historical_data[0].price,
+      change: -3.3, // Hardcoded example value
+      changePercent: -1.53, // Hardcoded example value
+      sentiment: fallbackData.sentiment,
+      historical_data: fallbackData.historical_data,
+      prediction: fallbackData.prediction,
+      last_updated: fallbackData.last_updated,
+    }
+
+    currentPrice.value = fallbackData.historical_data[0].price
   } finally {
     isLoading.value = false
   }
@@ -65,8 +118,119 @@ const formatPrice = (price: number) => {
 // Handle timeframe change
 const handleTimeframeChange = (timeframe: string) => {
   selectedTimeframe.value = timeframe
-  // You could implement additional logic here to adjust chart data based on timeframe
 }
+
+// Handle chart loaded event
+const handleChartLoaded = (data: any) => {
+  stockData.value = {
+    ...stockData.value,
+    ...data,
+  }
+  currentPrice.value = data.currentPrice
+  isLoading.value = false
+}
+
+const priceChange = computed(() => {
+  if (!stockData.value || !stockData.value.historical_data?.length) {
+    return { value: 0, percent: 0 }
+  }
+
+  const historicalData = stockData.value.historical_data
+  const currentPrice = historicalData[historicalData.length - 1].price
+  const previousPrice = historicalData[historicalData.length - 2]?.price || currentPrice
+  const change = currentPrice - previousPrice
+  const percentChange = (change / previousPrice) * 100
+
+  return {
+    value: change.toFixed(2),
+    percent: percentChange.toFixed(2),
+  }
+})
+
+// Compute the sentiment score indicator position (for sentiment display in right panel)
+const sentimentPosition = computed(() => {
+  if (!stockData.value || !stockData.value.sentiment) return '50%'
+  // Normalize the score to a percentage (0-100)
+  // Assuming score ranges from -1 to 1
+  const normalizedScore = ((stockData.value.sentiment.score + 1) / 2) * 100
+  return `${normalizedScore}%`
+})
+
+// Compute the investment score indicator position (for sentiment display in right panel)
+const investmentPosition = computed(() => {
+  if (!stockData.value || !stockData.value.sentiment) return '50%'
+  // Assuming investment_score is already 0-100
+  return `${stockData.value.sentiment.investment_score}%`
+})
+
+// Compute sentiment category color (for sentiment display in right panel)
+const categoryColor = computed(() => {
+  if (!stockData.value || !stockData.value.sentiment) return 'text-yellow-500'
+  const category = stockData.value.sentiment.category.toLowerCase()
+  if (category.includes('bullish')) return 'text-green-500'
+  if (category.includes('bearish')) return 'text-red-500'
+  return 'text-yellow-500' // Neutral
+})
+
+// Get the last prediction date and price (for prediction display in right panel)
+const lastPrediction = computed(() => {
+  if (
+    !stockData.value ||
+    !stockData.value.prediction ||
+    !stockData.value.prediction.data ||
+    stockData.value.prediction.data.length === 0
+  ) {
+    return { date: '', price: 0 }
+  }
+
+  const lastIndex = stockData.value.prediction.data.length - 1
+  return {
+    date: new Date(stockData.value.prediction.data[lastIndex].date).toLocaleDateString(),
+    price: stockData.value.prediction.data[lastIndex].price,
+  }
+})
+
+// Calculate the prediction change percentage (for prediction display in right panel)
+const predictionChange = computed(() => {
+  if (!stockData.value || !lastPrediction.value.price || !stockData.value.currentPrice) {
+    return { value: '0.00', percent: '0.00' }
+  }
+
+  const change = lastPrediction.value.price - stockData.value.currentPrice
+  const percentChange = (change / stockData.value.currentPrice) * 100
+  return {
+    value: change.toFixed(2),
+    percent: percentChange.toFixed(2),
+  }
+})
+
+// Calculate the upper and lower bounds (for prediction display in right panel)
+const bounds = computed(() => {
+  if (
+    !stockData.value ||
+    !stockData.value.prediction ||
+    !stockData.value.prediction.upper_bound ||
+    !stockData.value.prediction.lower_bound ||
+    stockData.value.prediction.upper_bound.length === 0 ||
+    stockData.value.prediction.lower_bound.length === 0
+  ) {
+    return { upper: '0.00', lower: '0.00' }
+  }
+
+  const lastIndex = stockData.value.prediction.upper_bound.length - 1
+  return {
+    upper: stockData.value.prediction.upper_bound[lastIndex].price.toFixed(2),
+    lower: stockData.value.prediction.lower_bound[lastIndex].price.toFixed(2),
+  }
+})
+
+// Determine if the prediction is positive or negative
+const isPredictionPositive = computed(() => {
+  if (!stockData.value || !lastPrediction.value.price || !stockData.value.currentPrice) {
+    return false
+  }
+  return lastPrediction.value.price >= stockData.value.currentPrice
+})
 
 // Watch for changes in selected stock
 watchEffect(() => {
@@ -94,33 +258,29 @@ onMounted(() => {
               <CardTitle class="text-xl font-bold">{{ selectedStock }} Stock Chart</CardTitle>
               <CardDescription v-if="stockData" class="flex items-center gap-2">
                 <span>{{ stockData.name }}</span>
-                <span class="font-semibold">${{ formatPrice(stockData.currentPrice) }}</span>
+                <span class="font-semibold">${{ formatPrice(currentPrice) }}</span>
                 <span
-                  :class="stockData.change > 0 ? 'text-green-500' : 'text-red-500'"
+                  :class="Number(priceChange.value) > 0 ? 'text-green-500' : 'text-red-500'"
                   class="flex items-center text-sm"
                 >
-                  <TrendingUp v-if="stockData.change > 0" class="h-4 w-4 mr-1" />
+                  <TrendingUp v-if="Number(priceChange.value) > 0" class="h-4 w-4 mr-1" />
                   <TrendingDown v-else class="h-4 w-4 mr-1" />
-                  {{ stockData.change > 0 ? '+' : '' }}{{ stockData.change.toFixed(2) }} ({{
-                    stockData.change > 0 ? '+' : ''
-                  }}{{ stockData.changePercent.toFixed(2) }}%)
+                  {{ Number(priceChange.value) > 0 ? '+' : '' }}{{ priceChange.value }} ({{
+                    priceChange.percent
+                  }}%)
                 </span>
               </CardDescription>
             </div>
-            <Tabs defaultValue="1M" class="w-auto" @update:value="handleTimeframeChange">
-              <TabsList>
-                <TabsTrigger value="1D">1D</TabsTrigger>
-                <TabsTrigger value="1W">1W</TabsTrigger>
-                <TabsTrigger value="1M">1M</TabsTrigger>
-                <TabsTrigger value="3M">3M</TabsTrigger>
-                <TabsTrigger value="1Y">1Y</TabsTrigger>
-              </TabsList>
-            </Tabs>
           </div>
         </CardHeader>
         <CardContent>
           <div class="h-64 w-full">
-            <StockChart v-if="!isLoading" :stock-symbol="selectedStock" />
+            <StockChart
+              v-if="!isLoading"
+              :stock-symbol="selectedStock"
+              :timeframe="selectedTimeframe"
+              @chart-loaded="handleChartLoaded"
+            />
             <div v-else class="h-full w-full flex items-center justify-center">
               <div
                 class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-copper"
@@ -130,32 +290,127 @@ onMounted(() => {
         </CardContent>
       </Card>
 
-      <!-- Stock Predictions Card (Right Side - 1/3 width on large screens) -->
-      <Card class="bg-background shadow-md">
+      <!-- Right Side Column - 1/3 width on large screens -->
+      <div class="space-y-4">
+        <!-- Sentiment Analysis Card -->
+        <Card class="bg-background shadow-md" v-if="stockData && stockData.sentiment">
+          <CardHeader>
+            <CardTitle class="text-lg font-semibold">Sentiment Analysis</CardTitle>
+          </CardHeader>
+          <CardContent class="space-y-4">
+            <!-- Sentiment Score -->
+            <div class="space-y-2">
+              <div class="flex justify-between text-sm">
+                <span>Bearish</span>
+                <span :class="categoryColor">{{ stockData.sentiment.category }}</span>
+                <span>Bullish</span>
+              </div>
+              <div class="relative h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
+                <div class="absolute w-full h-full flex items-center justify-center">
+                  <div
+                    class="absolute h-4 w-4 rounded-full bg-blue-500 shadow-md z-10"
+                    :style="{ left: sentimentPosition }"
+                  ></div>
+                </div>
+              </div>
+            </div>
+            <!-- Investment Score -->
+            <div class="space-y-2">
+              <div class="flex justify-between text-sm">
+                <span>High Risk</span>
+                <span class="font-medium"
+                  >Investment Score: {{ stockData.sentiment.investment_score }}/100</span
+                >
+                <span>Low Risk</span>
+              </div>
+              <div class="relative h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
+                <div
+                  class="absolute h-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 rounded-full"
+                  style="width: 100%"
+                ></div>
+                <div class="absolute w-full h-full flex items-center justify-center">
+                  <div
+                    class="absolute h-4 w-4 rounded-full bg-white border-2 border-blue-500 shadow-md z-10"
+                    :style="{ left: investmentPosition }"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <!-- Price Prediction Card -->
+        <Card class="bg-background shadow-md" v-if="stockData && stockData.prediction">
+          <CardHeader>
+            <CardTitle class="text-lg font-semibold">Price Prediction</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="space-y-4">
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-500">Current Price</span>
+                <span class="font-medium" v-if="stockData"
+                  >${{ stockData.currentPrice.toFixed(2) }}</span
+                >
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-500"
+                  >Predicted Price ({{ lastPrediction.date }})</span
+                >
+                <span class="font-medium">${{ lastPrediction.price.toFixed(2) }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-500">Prediction Change</span>
+                <span
+                  :class="isPredictionPositive ? 'text-green-500' : 'text-red-500'"
+                  class="font-medium"
+                >
+                  {{ isPredictionPositive ? '+' : '' }}{{ predictionChange.value }} ({{
+                    predictionChange.percent
+                  }}%)
+                </span>
+              </div>
+              <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
+                <div class="text-sm text-gray-500 mb-2">Confidence Interval</div>
+                <div class="flex justify-between items-center">
+                  <span class="text-sm">Lower Bound</span>
+                  <span class="font-medium">${{ bounds.lower }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-sm">Upper Bound</span>
+                  <span class="font-medium">${{ bounds.upper }}</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <!-- Stock Predictions Card -->
+        <Card class="bg-background shadow-md">
+          <CardHeader>
+            <CardTitle class="text-xl font-bold flex items-center gap-2">
+              <LineChart class="h-5 w-5 text-copper" />
+              Stock Predictions
+            </CardTitle>
+            <CardDescription>Latest AI-powered market predictions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <StockPredictionList />
+          </CardContent>
+        </Card>
+      </div>
+
+      <!-- Sentiment Score Table (Bottom) -->
+      <Card class="mt-4 bg-background shadow-md">
         <CardHeader>
-          <CardTitle class="text-xl font-bold flex items-center gap-2">
-            <LineChart class="h-5 w-5 text-copper" />
-            Stock Predictions
-          </CardTitle>
-          <CardDescription>Latest AI-powered market predictions</CardDescription>
+          <div class="flex items-center gap-2">
+            <TrendingUp class="h-5 w-5 text-copper" />
+            <CardTitle class="text-xl font-bold">Top 100 Sentiment Stocks</CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
-          <StockPredictionList />
+          <SentimentTable />
         </CardContent>
       </Card>
     </div>
-
-    <!-- Sentiment Score Table (Bottom) -->
-    <Card class="mt-4 bg-background shadow-md">
-      <CardHeader>
-        <div class="flex items-center gap-2">
-          <TrendingUp class="h-5 w-5 text-copper" />
-          <CardTitle class="text-xl font-bold">Top 100 Sentiment Stocks</CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <SentimentTable />
-      </CardContent>
-    </Card>
   </div>
 </template>
