@@ -81,7 +81,7 @@ const prevPage = () => {
 </script>
 
 <template>
-  <div class="h-[430px] flex flex-col justify-between">
+  <div class="h-[360px] flex flex-col justify-between">
     <div class="space-y-4 overflow-y-auto">
       <div
         v-for="prediction in paginatedPredictions"

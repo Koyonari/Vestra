@@ -49,62 +49,6 @@ const fetchStockData = async (symbol: string) => {
     currentPrice.value = lastPrice
   } catch (error) {
     console.error('Error fetching stock data:', error)
-    // Use the hardcoded data from AAPL_data.json as fallback
-    const fallbackData = {
-      ticker: 'AAPL',
-      name: 'Apple Inc.',
-      sentiment: {
-        score: 0.09,
-        category: 'Bullish',
-        investment_score: 58.9,
-      },
-      historical_data: [
-        { date: '2025-03-14', price: 212.34 },
-        // Include a few recent data points for simplicity
-        { date: '2025-03-13', price: 209.68 },
-        { date: '2025-03-12', price: 216.98 },
-        { date: '2025-03-11', price: 220.84 },
-        { date: '2025-03-10', price: 227.48 },
-      ],
-      prediction: {
-        data: [
-          { date: '2025-03-15', price: 212.34 },
-          { date: '2025-03-16', price: 212.38 },
-          { date: '2025-03-17', price: 210.1 },
-          { date: '2025-03-18', price: 210.13 },
-          { date: '2025-03-19', price: 208.91 },
-        ],
-        upper_bound: [
-          { date: '2025-03-15', price: 233.57 },
-          { date: '2025-03-16', price: 233.62 },
-          { date: '2025-03-17', price: 231.11 },
-          { date: '2025-03-18', price: 231.14 },
-          { date: '2025-03-19', price: 229.8 },
-        ],
-        lower_bound: [
-          { date: '2025-03-15', price: 191.11 },
-          { date: '2025-03-16', price: 191.14 },
-          { date: '2025-03-17', price: 189.09 },
-          { date: '2025-03-18', price: 189.11 },
-          { date: '2025-03-19', price: 188.02 },
-        ],
-      },
-      last_updated: '2025-03-15 00:31:20',
-    }
-
-    stockData.value = {
-      name: fallbackData.name,
-      ticker: fallbackData.ticker,
-      currentPrice: fallbackData.historical_data[0].price,
-      change: -3.3, // Hardcoded example value
-      changePercent: -1.53, // Hardcoded example value
-      sentiment: fallbackData.sentiment,
-      historical_data: fallbackData.historical_data,
-      prediction: fallbackData.prediction,
-      last_updated: fallbackData.last_updated,
-    }
-
-    currentPrice.value = fallbackData.historical_data[0].price
   } finally {
     isLoading.value = false
   }
@@ -247,104 +191,116 @@ onMounted(() => {
 <template>
   <div class="container mx-auto p-4">
     <h1 class="text-3xl font-bold mb-6 text-copper dark:text-white">Vestra Dashboard</h1>
-
-    <!-- Bento Grid Layout -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-      <!-- Stock Chart Card (Left Side - 2/3 width on large screens) -->
-      <Card class="lg:col-span-2 bg-background shadow-md">
-        <CardHeader class="pb-2">
-          <div class="flex justify-between items-center">
-            <div>
-              <CardTitle class="text-xl font-bold">{{ selectedStock }} Stock Chart</CardTitle>
-              <CardDescription v-if="stockData" class="flex items-center gap-2">
-                <span>{{ stockData.name }}</span>
-                <span class="font-semibold">${{ formatPrice(currentPrice) }}</span>
-                <span
-                  :class="Number(priceChange.value) > 0 ? 'text-green-500' : 'text-red-500'"
-                  class="flex items-center text-sm"
-                >
-                  <TrendingUp v-if="Number(priceChange.value) > 0" class="h-4 w-4 mr-1" />
-                  <TrendingDown v-else class="h-4 w-4 mr-1" />
-                  {{ Number(priceChange.value) > 0 ? '+' : '' }}{{ priceChange.value }} ({{
-                    priceChange.percent
-                  }}%)
-                </span>
-              </CardDescription>
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- Left Section (2/3 width) -->
+      <div class="lg:col-span-2 flex flex-col space-y-4">
+        <!-- Stock Chart Card -->
+        <Card class="bg-background shadow-md flex-grow flex-col flex">
+          <CardHeader class="pb-2">
+            <div class="flex justify-between items-center">
+              <div>
+                <CardTitle class="text-xl font-bold">{{ selectedStock }} Stock Chart</CardTitle>
+                <CardDescription v-if="stockData" class="flex items-center gap-2">
+                  <span>{{ stockData.name }}</span>
+                  <span class="font-semibold">${{ formatPrice(currentPrice) }}</span>
+                  <span
+                    :class="Number(priceChange.value) > 0 ? 'text-green-500' : 'text-red-500'"
+                    class="flex items-center text-sm"
+                  >
+                    <TrendingUp v-if="Number(priceChange.value) > 0" class="h-4 w-4 mr-1" />
+                    <TrendingDown v-else class="h-4 w-4 mr-1" />
+                    {{ Number(priceChange.value) > 0 ? '+' : '' }}{{ priceChange.value }} ({{
+                      priceChange.percent
+                    }}%)
+                  </span>
+                </CardDescription>
+              </div>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div class="h-64 w-full">
-            <StockChart
-              v-if="!isLoading"
-              :stock-symbol="selectedStock"
-              :timeframe="selectedTimeframe"
-              @chart-loaded="handleChartLoaded"
-            />
-            <div v-else class="h-full w-full flex items-center justify-center">
-              <div
-                class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-copper"
-              ></div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <!-- Right Side Column - 1/3 width on large screens -->
-      <div class="space-y-4">
-        <!-- Sentiment Analysis Card -->
-        <Card class="bg-background shadow-md" v-if="stockData && stockData.sentiment">
-          <CardHeader>
-            <CardTitle class="text-lg font-semibold">Sentiment Analysis</CardTitle>
           </CardHeader>
-          <CardContent class="space-y-4">
-            <!-- Sentiment Score -->
-            <div class="space-y-2">
-              <div class="flex justify-between text-sm">
-                <span>Bearish</span>
-                <span :class="categoryColor">{{ stockData.sentiment.category }}</span>
-                <span>Bullish</span>
-              </div>
-              <div class="relative h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
-                <div class="absolute w-full h-full flex items-center justify-center">
-                  <div
-                    class="absolute h-4 w-4 rounded-full bg-blue-500 shadow-md z-10"
-                    :style="{ left: sentimentPosition }"
-                  ></div>
-                </div>
-              </div>
-            </div>
-            <!-- Investment Score -->
-            <div class="space-y-2">
-              <div class="flex justify-between text-sm">
-                <span>High Risk</span>
-                <span class="font-medium"
-                  >Investment Score: {{ stockData.sentiment.investment_score }}/100</span
-                >
-                <span>Low Risk</span>
-              </div>
-              <div class="relative h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
+          <CardContent class="p-6">
+            <div class="h-72 w-full flex items-center justify-center mb-4">
+              <StockChart
+                v-if="!isLoading"
+                :stock-symbol="selectedStock"
+                :timeframe="selectedTimeframe"
+                @chart-loaded="handleChartLoaded"
+                class="w-full"
+              />
+              <div v-else class="h-full w-full flex items-center justify-center">
                 <div
-                  class="absolute h-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 rounded-full"
-                  style="width: 100%"
+                  class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-copper"
                 ></div>
-                <div class="absolute w-full h-full flex items-center justify-center">
-                  <div
-                    class="absolute h-4 w-4 rounded-full bg-white border-2 border-blue-500 shadow-md z-10"
-                    :style="{ left: investmentPosition }"
-                  ></div>
-                </div>
               </div>
             </div>
           </CardContent>
         </Card>
+        <!-- Sentiment Analysis Card with flexible height -->
+        <Card
+          class="bg-background shadow-md flex-grow flex-col flex"
+          v-if="stockData && stockData.sentiment"
+        >
+          <CardHeader>
+            <CardTitle class="text-lg font-semibold">Sentiment Analysis</CardTitle>
+          </CardHeader>
+          <CardContent class="p-6 flex-grow flex flex-col justify-between">
+            <!-- Sentiment Score -->
+            <div class="space-y-6 flex-grow">
+              <div class="space-y-3">
+                <div class="flex justify-between text-sm">
+                  <span>Bearish</span>
+                  <span :class="categoryColor">{{ stockData.sentiment.category }}</span>
+                  <span>Bullish</span>
+                </div>
+                <div class="relative h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
+                  <div class="absolute w-full h-full flex items-center justify-center">
+                    <div
+                      class="absolute h-4 w-4 rounded-full bg-blue-500 shadow-md z-10"
+                      :style="{ left: sentimentPosition }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+              <!-- Investment Score -->
+              <div class="space-y-3">
+                <div class="flex justify-between text-sm">
+                  <span>High Risk</span>
+                  <span class="font-medium"
+                    >Investment Score: {{ stockData.sentiment.investment_score }}/100</span
+                  >
+                  <span>Low Risk</span>
+                </div>
+                <div class="relative h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
+                  <div
+                    class="absolute h-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 rounded-full"
+                    style="width: 100%"
+                  ></div>
+                  <div class="absolute w-full h-full flex items-center justify-center">
+                    <div
+                      class="absolute h-4 w-4 rounded-full bg-white border-2 border-blue-500 shadow-md z-10"
+                      :style="{ left: investmentPosition }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Spacer div to push content to top -->
+            <div class="mt-auto pt-4"></div>
+          </CardContent>
+        </Card>
+      </div>
 
+      <!-- Right Section (1/3 width) -->
+      <div class="flex flex-col space-y-4 h-full">
         <!-- Price Prediction Card -->
-        <Card class="bg-background shadow-md" v-if="stockData && stockData.prediction">
+        <Card
+          class="bg-background shadow-md flex-grow flex"
+          v-if="stockData && stockData.prediction"
+        >
           <CardHeader>
             <CardTitle class="text-lg font-semibold">Price Prediction</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent class="p-4">
             <div class="space-y-4">
               <div class="flex justify-between items-center">
                 <span class="text-sm text-gray-500">Current Price</span>
@@ -354,12 +310,15 @@ onMounted(() => {
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-sm text-gray-500"
-                  >Predicted Price ({{ lastPrediction.date }})</span
+                  >Predicted Price <br />({{ lastPrediction.date }})</span
                 >
                 <span class="font-medium">${{ lastPrediction.price.toFixed(2) }}</span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-sm text-gray-500">Prediction Change</span>
+                <span class="text-sm text-gray-500"
+                  >Prediction<br />
+                  Change</span
+                >
                 <span
                   :class="isPredictionPositive ? 'text-green-500' : 'text-red-500'"
                   class="font-medium"
@@ -385,7 +344,7 @@ onMounted(() => {
         </Card>
 
         <!-- Stock Predictions Card -->
-        <Card class="bg-background shadow-md">
+        <Card class="bg-background shadow-md flex-col flex">
           <CardHeader>
             <CardTitle class="text-xl font-bold flex items-center gap-2">
               <LineChart class="h-5 w-5 text-copper" />
@@ -393,24 +352,24 @@ onMounted(() => {
             </CardTitle>
             <CardDescription>Latest AI-powered market predictions</CardDescription>
           </CardHeader>
-          <CardContent>
-            <StockPredictionList />
+          <CardContent class="p-4 flex-grow">
+            <StockPredictionList class="h-full" />
           </CardContent>
         </Card>
       </div>
-
-      <!-- Sentiment Score Table (Bottom) -->
-      <Card class="mt-4 bg-background shadow-md">
-        <CardHeader>
-          <div class="flex items-center gap-2">
-            <TrendingUp class="h-5 w-5 text-copper" />
-            <CardTitle class="text-xl font-bold">Top 100 Sentiment Stocks</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <SentimentTable />
-        </CardContent>
-      </Card>
     </div>
+
+    <!-- Sentiment Score Table (Bottom, Full Width) -->
+    <Card class="mt-4 bg-background shadow-md">
+      <CardHeader>
+        <div class="flex items-center gap-2">
+          <TrendingUp class="h-5 w-5 text-copper" />
+          <CardTitle class="text-xl font-bold">Top 100 Sentiment Stocks</CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent class="p-4">
+        <SentimentTable />
+      </CardContent>
+    </Card>
   </div>
 </template>

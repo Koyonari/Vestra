@@ -27,21 +27,6 @@ const chartContainerRef = ref<HTMLElement | null>(null)
 const chart = ref<any>(null)
 const resizeObserver = ref<ResizeObserver | null>(null)
 
-// Calculate price change and percentage
-const priceChange = computed(() => {
-  if (chartData.value.length < 2) return { value: 0, percent: 0 }
-
-  const currentPrice = chartData.value[chartData.value.length - 1].price
-  const previousPrice = chartData.value[chartData.value.length - 2].price
-  const change = currentPrice - previousPrice
-  const percentChange = (change / previousPrice) * 100
-
-  return {
-    value: change.toFixed(2),
-    percent: percentChange.toFixed(2),
-  }
-})
-
 // In the initializeChart function, update the chart creation:
 
 const initializeChart = () => {
