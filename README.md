@@ -1,39 +1,36 @@
-# MarketSentiment
+## Vestra
 
-This template should help get you started developing with Vue 3 in Vite.
+### Invest Extra
 
-## Recommended IDE Setup
+Vestra is a web application that does sentiment analysis on dozens of articles by taking live data through webscraping, according to the top 500 stocks, and then using the sentiment analysis to determine if the stock is a good investment.
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## Features
 
-## Type Support for `.vue` Imports in TS
+- Interactable Visualization of the predicted stock prices with lower and upper bounds
+- Ranking of the top 100 stocks based on the sentiment analysis
+- Stock Prediction News
+- Price Prediction per stock
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+### Technologies Used
 
-## Customize configuration
+#### Front End
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+- Vue.js
+- Typescript
+- ShadCN Vue
+- TailwindCSS
+- Lightweight Charts
+- Lucide-Vue-Next
 
-## Project Setup
+#### Back End
 
-```sh
-npm install
-```
+- Node.js
+- Express
+- BCrypt
+- Dotenv
+- Cors
 
-### Compile and Hot-Reload for Development
+#### Database
 
-```sh
-npm run dev
-```
-
-### Type-Check, Compile and Minify for Production
-
-```sh
-npm run build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
+- MongoDB
+- Mongoose
