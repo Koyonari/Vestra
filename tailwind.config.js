@@ -67,7 +67,7 @@ export default {
     },
   },
   plugins: [
-    require('tailwindcss-animate'),
+    import('tailwindcss-animate'),
     function ({ addUtilities, theme }) {
       const newUtilities = {
         '.bg_dark': {

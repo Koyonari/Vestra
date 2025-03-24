@@ -1,22 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import {
-  Calendar,
-  Home,
-  Inbox,
-  Search,
-  Settings,
-  Moon,
-  Sun,
-  Info,
-  TrendingUp,
-  DollarSign,
-  BarChart3,
-  LineChart,
-  User,
-  LogOut,
-  ChevronUp,
-} from 'lucide-vue-next'
+import { Settings, Moon, Sun, LineChart, User, LogOut, ChevronUp } from 'lucide-vue-next'
 import {
   Sidebar,
   SidebarContent,
@@ -33,11 +17,14 @@ import { DropdownMenu } from '@/components/ui/dropdown-menu'
 import { DropdownMenuContent } from '@/components/ui/dropdown-menu'
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { useSidebar } from '@/components/ui/sidebar/utils'
+
+const { state, isMobile } = useSidebar()
 
 // Menu items
 const items = [
   {
-    title: 'Dashboard',
+    title: 'Stock Dashboard',
     url: '#',
     icon: LineChart,
   },
@@ -120,6 +107,7 @@ watch(isDarkMode, (newValue) => {
   applyTheme()
 })
 </script>
+
 <template>
   <div :class="{ dark: isDarkMode }">
     <Sidebar
@@ -129,15 +117,16 @@ watch(isDarkMode, (newValue) => {
     >
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel class="flex items-center">
-            <span
-              class="text-copper dark:text-white font-bold text-xl transition-colors duration-300"
-              >Vestra</span
-            >
-          </SidebarGroupLabel>
-          <div class="text-sm italic mb-4 transition-colors duration-300">Invest More</div>
+          <div class="text-sm italic mb-4 transition-colors duration-300">
+            <img src="@/assets/vestra.svg" alt="Vestra" class="h-16 w-16" />
+          </div>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu
+              :class="[
+                'flex flex-col gap-2',
+                { 'items-center': state === 'collapsed' && !isMobile },
+              ]"
+            >
               <SidebarMenuItem v-for="item in items" :key="item.title">
                 <SidebarMenuButton asChild>
                   <a
@@ -146,9 +135,9 @@ watch(isDarkMode, (newValue) => {
                   >
                     <component
                       :is="item.icon"
-                      class="h-5 w-5 text-copper transition-colors duration-300"
+                      class="h-5 w-5 text-copper transition-colors duration-300 self-center"
                     />
-                    <span class="transition-colors duration-300">{{ item.title }}</span>
+                    <span class="transition-colors duration-300 text-sm">{{ item.title }}</span>
                   </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -157,20 +146,57 @@ watch(isDarkMode, (newValue) => {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter class="border-t border-copper/30 pt-4 mt-auto transition-colors duration-300">
-        <div class="flex flex-col space-y-4 px-3">
+        <div
+          class="flex flex-col space-y-4"
+          :class="{
+            'px-3': state === 'expanded' || isMobile,
+            'px-1 items-center': state === 'collapsed' && !isMobile,
+          }"
+        >
           <!-- Theme Toggle -->
-          <div class="flex items-center justify-between">
-            <span class="text-sm transition-colors duration-300">Theme</span>
-            <div class="flex items-center gap-2">
-              <Sun v-if="!isDarkMode" class="h-4 w-4 text-copper transition-colors duration-300" />
-              <Moon v-else class="h-4 w-4 text-copper transition-colors duration-300" />
-              <Switch :modelValue="isDarkMode" @update:modelValue="toggleTheme" />
+          <div
+            class="flex items-center"
+            :class="{
+              'justify-between w-full': state === 'expanded' || isMobile,
+              'justify-center': state === 'collapsed' && !isMobile,
+            }"
+          >
+            <span
+              v-if="state === 'expanded' || isMobile"
+              class="text-sm transition-colors duration-300"
+              >Theme</span
+            >
+            <div class="flex items-center" :class="{ 'gap-2': state === 'expanded' || isMobile }">
+              <button
+                v-if="state === 'collapsed' && !isMobile"
+                @click="toggleTheme"
+                class="flex items-center justify-center transition-colors duration-300"
+              >
+                <Sun
+                  v-if="!isDarkMode"
+                  class="h-4 w-4 text-copper transition-colors duration-300"
+                />
+                <Moon v-else class="h-4 w-4 text-copper transition-colors duration-300" />
+              </button>
+              <template v-else>
+                <Sun
+                  v-if="!isDarkMode"
+                  class="h-4 w-4 text-copper transition-colors duration-300"
+                />
+                <Moon v-else class="h-4 w-4 text-copper transition-colors duration-300" />
+                <Switch :modelValue="isDarkMode" @update:modelValue="toggleTheme" />
+              </template>
             </div>
           </div>
+
           <!-- User Profile -->
           <DropdownMenu>
             <DropdownMenuTrigger
-              class="flex items-center justify-between p-2 rounded-md hover:bg-copper/10 cursor-pointer transition-colors duration-300"
+              class="flex items-center rounded-md hover:bg-copper/10 cursor-pointer transition-colors duration-300"
+              :class="{
+                'justify-between p-2 w-full': state === 'expanded' || isMobile,
+                'justify-center p-1': state === 'collapsed' && !isMobile,
+              }"
             >
               <div class="flex items-center gap-2">
                 <div
@@ -178,9 +204,14 @@ watch(isDarkMode, (newValue) => {
                 >
                   {{ username.charAt(0) }}
                 </div>
-                <span class="font-medium transition-colors duration-300">{{ username }}</span>
+                <span
+                  v-if="state === 'expanded' || isMobile"
+                  class="font-medium transition-colors duration-300"
+                  >{{ username }}</span
+                >
               </div>
               <ChevronUp
+                v-if="state === 'expanded' || isMobile"
                 class="h-4 w-4 transition-transform duration-300"
                 :class="{ 'rotate-180': !isProfileOpen }"
               />
