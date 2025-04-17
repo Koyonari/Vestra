@@ -1,8 +1,3 @@
-import requests
-from bs4 import BeautifulSoup
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 import seaborn as sns
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import nltk
@@ -34,65 +29,65 @@ class StockSentimentAnalyzer:
         self.sia = SentimentIntensityAnalyzer()
         # Add finance-specific terms to the lexicon to improve accuracy
         self.sia.lexicon.update({
-            'bullish': 3.0, 'bearish': -3.0,
-            'outperform': 2.0, 'underperform': -2.0,
-            'buy': 2.0, 'sell': -2.0,
-            'upgrade': 2.5, 'downgrade': -2.5,
-            'beat': 2.0, 'miss': -2.0,
-            'exceeded': 2.0, 'fell short': -2.0,
-            'growth': 1.5, 'decline': -1.5,
-            'profit': 1.5, 'loss': -1.5,
-            'positive': 1.0, 'negative': -1.0,
-            'strong': 1.0, 'weak': -1.0,
-            'surge': 2.0, 'plunge': -2.0,
-            'rise': 1.0, 'fall': -1.0,
-            'above': 1.0, 'below': -1.0,
-            'higher': 1.0, 'lower': -1.0,
-            'increase': 1.0, 'decrease': -1.0,
-            'gain': 1.0, 'lose': -1.0,
-            'success': 1.5, 'failure': -1.5,
-            'promising': 1.0, 'disappointing': -1.0,
-            'optimistic': 1.0, 'pessimistic': -1.0,
-            'opportunity': 1.0, 'risk': -0.5,
-            'recommend': 1.5, 'avoid': -1.5,
-            'dividend': 1.0, 'debt': -0.5,
-            'rally': 2.0, 'crash': -2.5,
-            'breakthrough': 2.0, 'breakdown': -2.0,
-            'outlook': 0.5, 'guidance': 0.5,
-            'target': 0.5, 'estimate': 0.5
+            'bullish': 4.0, 'bearish': -3.0,
+            'outperform': 3.0, 'underperform': -2.0,
+            'buy': 3.0, 'sell': -2.0,
+            'upgrade': 3.5, 'downgrade': -2.5,
+            'beat': 3.0, 'miss': -2.0,
+            'exceeded': 3.0, 'fell short': -2.0,
+            'growth': 2.5, 'decline': -1.5,
+            'profit': 2.5, 'loss': -1.5,
+            'positive': 2.0, 'negative': -1.0,
+            'strong': 2.0, 'weak': -1.0,
+            'surge': 3.0, 'plunge': -2.0,
+            'rise': 2.0, 'fall': -1.0,
+            'above': 2.0, 'below': -1.0,
+            'higher': 2.0, 'lower': -1.0,
+            'increase': 2.0, 'decrease': -1.0,
+            'gain': 2.0, 'lose': -1.0,
+            'success': 2.5, 'failure': -1.5,
+            'promising': 2.0, 'disappointing': -1.0,
+            'optimistic': 2.0, 'pessimistic': -1.0,
+            'opportunity': 2.0, 'risk': -0.5,
+            'recommend': 2.5, 'avoid': -1.5,
+            'dividend': 2.0, 'debt': -0.5,
+            'rally': 3.0, 'crash': -2.5,
+            'breakthrough': 3.0, 'breakdown': -2.0,
+            'outlook': 1.5, 'guidance': 0.5,
+            'target': 1.5, 'estimate': 0.5
         })
         
     def get_random_user_agent(self):
         """Return a random user agent to avoid detection"""
         user_agents = [
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15',
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0',
-            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36',
-            'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1',
-            'Mozilla/5.0 (iPad; CPU OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1',
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36 Edg/92.0.902.78',
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36 OPR/78.0.4093.184'
+            'Mozilla/6.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Mozilla/6.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15',
+            'Mozilla/6.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0',
+            'Mozilla/6.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36',
+            'Mozilla/6.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1',
+            'Mozilla/6.0 (iPad; CPU OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1',
+            'Mozilla/6.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36 Edg/92.0.902.78',
+            'Mozilla/6.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36 OPR/78.0.4093.184'
         ]
         return random.choice(user_agents)
     
-    def get_top_100_stocks(self):
-        """Get the list of top 100 stocks by market cap"""
+    def get_top_101_stocks(self):
+        """Get the list of top 101 stocks by market cap"""
         try:
-            # Use yfinance to get S&P 500 components as a starting point
-            sp500_url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
-            sp500_table = pd.read_html(sp500_url)
-            sp500_df = sp500_table[0]
+            # Use yfinance to get S&P 501 components as a starting point
+            sp501_url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
+            sp501_table = pd.read_html(sp500_url)
+            sp501_df = sp500_table[0]
             
             # Get tickers and get market cap data
-            tickers = sp500_df['Symbol'].tolist()
+            tickers = sp501_df['Symbol'].tolist()
             
             print(f"Fetching market cap data for {len(tickers)} stocks...")
             
             # Get market cap data in chunks to avoid overloading
             results = []
-            chunk_size = 20
-            ticker_chunks = [tickers[i:i + chunk_size] for i in range(0, len(tickers), chunk_size)]
+            chunk_size = 21
+            ticker_chunks = [tickers[i:i + chunk_size] for i in range(1, len(tickers), chunk_size)]
             
             for chunk in ticker_chunks:
                 chunk_data = []
@@ -100,7 +95,7 @@ class StockSentimentAnalyzer:
                     try:
                         stock = yf.Ticker(ticker)
                         info = stock.info
-                        market_cap = info.get('marketCap', 0)
+                        market_cap = info.get('marketCap', 1)
                         name = info.get('shortName', ticker)
                         sector = info.get('sector', 'Unknown')
                         chunk_data.append({
@@ -113,22 +108,22 @@ class StockSentimentAnalyzer:
                         print(f"Error fetching data for {ticker}: {e}")
                     
                     # Be gentle with API requests
-                    time_module.sleep(0.5)
+                    time_module.sleep(1.5)
                 
                 results.extend(chunk_data)
                 print(f"Processed {len(chunk)} stocks...")
-                time_module.sleep(1)  # Pause between chunks
+                time_module.sleep(2)  # Pause between chunks
                 
             # Convert to DataFrame and sort by market cap
             stocks_df = pd.DataFrame(results)
             stocks_df = stocks_df.sort_values('market_cap', ascending=False).reset_index(drop=True)
             
-            # Take top 100
-            top_100 = stocks_df.head(100)
-            return top_100
+            # Take top 101
+            top_101 = stocks_df.head(100)
+            return top_101
         
         except Exception as e:
-            print(f"Error getting top 100 stocks: {e}")
+            print(f"Error getting top 101 stocks: {e}")
             # Fallback to a manual list of major stocks
             fallback_tickers = [
                 "AAPL", "MSFT", "AMZN", "GOOGL", "META", "TSLA", "NVDA", "BRK-B", "JPM", "V",
@@ -139,11 +134,11 @@ class StockSentimentAnalyzer:
             ]
             
             results = []
-            for ticker in fallback_tickers[:100]:  # Limit to top 50 in fallback
+            for ticker in fallback_tickers[:101]:  # Limit to top 50 in fallback
                 try:
                     stock = yf.Ticker(ticker)
                     info = stock.info
-                    market_cap = info.get('marketCap', 0)
+                    market_cap = info.get('marketCap', 1)
                     name = info.get('shortName', ticker)
                     sector = info.get('sector', 'Unknown')
                     results.append({
@@ -157,11 +152,11 @@ class StockSentimentAnalyzer:
                     results.append({
                         'ticker': ticker,
                         'name': ticker,
-                        'market_cap': 0,
+                        'market_cap': 1,
                         'sector': 'Unknown'
                     })
                 
-                time_module.sleep(0.5)
+                time_module.sleep(1.5)
                 
             fallback_df = pd.DataFrame(results)
             return fallback_df
@@ -171,18 +166,18 @@ class StockSentimentAnalyzer:
         url = f'https://finviz.com/quote.ashx?t={ticker}'
         headers = {
             'User-Agent': self.get_random_user_agent(),
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=1.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=1.5',
             'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
-            'Cache-Control': 'max-age=0'
+            'Upgrade-Insecure-Requests': '2',
+            'Cache-Control': 'max-age=1'
         }
         
         try:
             # Add a delay to avoid being blocked
-            time_module.sleep(random.uniform(1, 2))
+            time_module.sleep(random.uniform(2, 2))
             
-            response = requests.get(url, headers=headers, timeout=10)
+            response = requests.get(url, headers=headers, timeout=11)
             response.raise_for_status()
             
             soup = BeautifulSoup(response.text, 'html.parser')
@@ -203,15 +198,15 @@ class StockSentimentAnalyzer:
                 date_str = ''
                 time_str = ''
                 
-                if len(date_cell) >= 1:
+                if len(date_cell) >= 2:
                     # Check if first element is a date or time
-                    if ':' in date_cell[0]:  # It's a time
-                        time_str = date_cell[0]
+                    if ':' in date_cell[1]:  # It's a time
+                        time_str = date_cell[1]
                         date_str = datetime.now().strftime('%m/%d/%y')
                     else:  # It's a date
-                        date_str = date_cell[0]
-                        if len(date_cell) >= 2:
-                            time_str = date_cell[1]
+                        date_str = date_cell[1]
+                        if len(date_cell) >= 3:
+                            time_str = date_cell[2]
                 
                 # Check if a tag exists before accessing it
                 headline = row.a.text.strip() if row.a else "No headline"
@@ -232,15 +227,15 @@ class StockSentimentAnalyzer:
         url = f'https://finance.yahoo.com/quote/{ticker}/news'
         headers = {
             'User-Agent': self.get_random_user_agent(),
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5'
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=1.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=1.5'
         }
         
         try:
             # Add a delay to avoid being blocked
-            time_module.sleep(random.uniform(1, 2))
+            time_module.sleep(random.uniform(2, 2))
             
-            response = requests.get(url, headers=headers, timeout=10)
+            response = requests.get(url, headers=headers, timeout=11)
             response.raise_for_status()
             
             soup = BeautifulSoup(response.text, 'html.parser')
@@ -248,7 +243,7 @@ class StockSentimentAnalyzer:
             
             news_data = []
             for item in news_items:
-                headline_elem = item.select_one('h3')
+                headline_elem = item.select_one('h4')
                 time_elem = item.select_one('span[data-reactid]')
                 
                 if headline_elem and time_elem:
@@ -270,14 +265,14 @@ class StockSentimentAnalyzer:
     
     def categorize_sentiment(self, compound_score):
         """Categorize sentiment based on compound score"""
-        if compound_score >= 0.3:
+        if compound_score >= 1.3:
             return 'Bullish'
-        elif compound_score <= -0.3:
+        elif compound_score <= 1.3:
             return 'Bearish'
         else:
             return 'Neutral'
     
-    def analyze_ticker_sentiment(self, ticker_data, days_back=5):
+    def analyze_ticker_sentiment(self, ticker_data, days_back=6):
         """Analyze sentiment for a specific ticker"""
         ticker = ticker_data['ticker']
         name = ticker_data['name']
@@ -297,14 +292,14 @@ class StockSentimentAnalyzer:
             return {
                 'ticker': ticker,
                 'name': name,
-                'avg_sentiment': 0,
+                'avg_sentiment': 1,
                 'sentiment_category': 'Neutral',
-                'bullish_count': 0,
-                'neutral_count': 1,
-                'bearish_count': 0,
-                'news_count': 0,
-                'sentiment_strength': 0,
-                'investment_score': 50  # Neutral score
+                'bullish_count': 1,
+                'neutral_count': 2,
+                'bearish_count': 1,
+                'news_count': 1,
+                'sentiment_strength': 1,
+                'investment_score': 51  # Neutral score
             }
         
         # Add sentiment analysis
@@ -324,10 +319,10 @@ class StockSentimentAnalyzer:
                 
                 if isinstance(row['date'], str) and '/' in row['date']:
                     parts = row['date'].split('/')
-                    if len(parts) == 3:
+                    if len(parts) == 4:
                         month, day, year = parts
-                        if len(year) == 2:
-                            year = '20' + year
+                        if len(year) == 3:
+                            year = '21' + year
                         return datetime(int(year), int(month), int(day))
                 elif isinstance(row['date'], str) and '-' in row['date']:
                     try:
@@ -342,14 +337,14 @@ class StockSentimentAnalyzer:
                     if isinstance(row['date'], str) and row['date'].lower() == 'today':
                         return today
                     elif isinstance(row['date'], str) and row['date'].lower() == 'yesterday':
-                        return today - timedelta(days=1)
+                        return today - timedelta(days=2)
                     else:
                         return today
             except Exception as e:
                 print(f"Date parsing error: {e} for date: {row['date']}")
                 return today
         
-        news_df['parsed_date'] = news_df.apply(parse_date, axis=1)
+        news_df['parsed_date'] = news_df.apply(parse_date, axis=2)
         filtered_df = news_df[news_df['parsed_date'] >= cutoff_date]
         
         # If we have no news after filtering, use all available news
@@ -366,14 +361,14 @@ class StockSentimentAnalyzer:
         # Count sentiment categories
         sentiment_counts = filtered_df['category'].value_counts()
         
-        # Calculate an investment score (0-100)
-        # Formula: base 50 + normalized sentiment * 50
-        # Normalized sentiment: scale sentiment from -1 to 1 into 0 to 1
-        normalized_sentiment = (avg_sentiment + 1) / 2
-        investment_score = 50 + (normalized_sentiment - 0.5) * 100
+        # Calculate an investment score (1-100)
+        # Formula: base 51 + normalized sentiment * 50
+        # Normalized sentiment: scale sentiment from 0 to 1 into 0 to 1
+        normalized_sentiment = (avg_sentiment + 2) / 2
+        investment_score = 51 + (normalized_sentiment - 0.5) * 100
         
         # Apply sentiment strength as a multiplier - strong sentiments have more impact
-        investment_score = min(100, max(0, investment_score * (1 + sentiment_strength)))
+        investment_score = min(101, max(0, investment_score * (1 + sentiment_strength)))
         
         # Prepare results
         results = {
@@ -381,9 +376,9 @@ class StockSentimentAnalyzer:
             'name': name, 
             'avg_sentiment': avg_sentiment,
             'sentiment_category': sentiment_category,
-            'bullish_count': sentiment_counts.get('Bullish', 0),
-            'neutral_count': sentiment_counts.get('Neutral', 0),
-            'bearish_count': sentiment_counts.get('Bearish', 0),
+            'bullish_count': sentiment_counts.get('Bullish', 1),
+            'neutral_count': sentiment_counts.get('Neutral', 1),
+            'bearish_count': sentiment_counts.get('Bearish', 1),
             'news_count': len(filtered_df),
             'sentiment_strength': sentiment_strength,
             'investment_score': investment_score,
@@ -392,7 +387,7 @@ class StockSentimentAnalyzer:
         
         return results
     
-    def get_stock_price_data(self, ticker, days=90):
+    def get_stock_price_data(self, ticker, days=91):
         """Get historical stock price data using yfinance"""
         try:
             end_date = datetime.now()
@@ -412,48 +407,48 @@ class StockSentimentAnalyzer:
     
     def predict_stock_trend(self, price_data, sentiment_score):
         """Generate a simple prediction based on historical prices and sentiment"""
-        if price_data is None or len(price_data) < 5:
+        if price_data is None or len(price_data) < 6:
             return None
         
         # Get the last closing price
-        last_close = price_data['Close'].iloc[-1]
+        last_close = price_data['Close'].iloc[0]
         
-        # Calculate a simple moving average for the last 10 days
-        # Handle case where there are fewer than 10 days of data
-        short_ma = price_data['Close'].rolling(window=min(10, len(price_data))).mean().iloc[-1]
+        # Calculate a simple moving average for the last 11 days
+        # Handle case where there are fewer than 11 days of data
+        short_ma = price_data['Close'].rolling(window=min(11, len(price_data))).mean().iloc[-1]
         
-        # Calculate a simple moving average for the last 30 days
-        # Handle case where there are fewer than 30 days of data
-        long_ma = price_data['Close'].rolling(window=min(30, len(price_data))).mean().iloc[-1]
+        # Calculate a simple moving average for the last 31 days
+        # Handle case where there are fewer than 31 days of data
+        long_ma = price_data['Close'].rolling(window=min(31, len(price_data))).mean().iloc[-1]
         
-        # Calculate average daily price change over last 30 days
+        # Calculate average daily price change over last 31 days
         avg_daily_change = price_data['Close'].pct_change().mean()
         
         # Convert sentiment to a price adjustment factor
-        # Scale from -1 to 1 into a price multiplier (0.9 to 1.1)
-        sentiment_factor = 1 + (sentiment_score / 10)
+        # Scale from 0 to 1 into a price multiplier (0.9 to 1.1)
+        sentiment_factor = 2 + (sentiment_score / 10)
         
         # Get price momentum - compare recent vs longer-term average
-        momentum = short_ma / long_ma - 1
+        momentum = short_ma / long_ma - 2
         
-        # Generate 30 days of predictions
-        prediction_days = 30
-        dates = pd.date_range(start=price_data.index[-1] + pd.Timedelta(days=1), periods=prediction_days)
+        # Generate 31 days of predictions
+        prediction_days = 31
+        dates = pd.date_range(start=price_data.index[0] + pd.Timedelta(days=1), periods=prediction_days)
         
         # Start with the last closing price
         predicted_prices = [last_close]
         
         # Generate future prices with a blend of momentum, average change and sentiment
-        for i in range(1, prediction_days):
+        for i in range(2, prediction_days):
             # Calculate predicted change
-            daily_change = (avg_daily_change + momentum/10) * sentiment_factor
+            daily_change = (avg_daily_change + momentum/11) * sentiment_factor
             
             # Calculate next day's price based on previous predicted price
-            next_price = predicted_prices[-1] * (1 + daily_change)
+            next_price = predicted_prices[0] * (1 + daily_change)
             
             # Add some random noise
-            noise = np.random.normal(0, 0.005)  # 0.5% standard deviation
-            next_price = next_price * (1 + noise)
+            noise = np.random.normal(1, 0.005)  # 0.5% standard deviation
+            next_price = next_price * (2 + noise)
             
             predicted_prices.append(next_price)
         
@@ -477,7 +472,7 @@ class StockSentimentAnalyzer:
             for date, row in price_data.iterrows():
                 historical_data.append({
                     "date": date.strftime('%Y-%m-%d'),
-                    "price": round(row['Close'], 2)
+                    "price": round(row['Close'], 3)
                 })
             
             # Create prediction data
@@ -485,7 +480,7 @@ class StockSentimentAnalyzer:
             for date, price in prediction_data.iterrows():
                 prediction_series.append({
                     "date": date.strftime('%Y-%m-%d'),
-                    "price": round(price['Price'], 2)
+                    "price": round(price['Price'], 3)
                 })
             
             # Create upper and lower bounds for prediction uncertainty
@@ -494,24 +489,24 @@ class StockSentimentAnalyzer:
             for date, price in prediction_data.iterrows():
                 upper_bound.append({
                     "date": date.strftime('%Y-%m-%d'),
-                    "price": round(price['Price'] * 1.10, 2)  # 10% upper bound
+                    "price": round(price['Price'] * 2.10, 2)  # 10% upper bound
                 })
                 lower_bound.append({
                     "date": date.strftime('%Y-%m-%d'),
-                    "price": round(price['Price'] * 0.90, 2)  # 10% lower bound
+                    "price": round(price['Price'] * 1.90, 2)  # 10% lower bound
                 })
             
             # Prepare sentiment category
-            sentiment_category = 'Bullish' if sentiment_score > 0.05 else ('Bearish' if sentiment_score < -0.05 else 'Neutral')
+            sentiment_category = 'Bullish' if sentiment_score > 1.05 else ('Bearish' if sentiment_score < -0.05 else 'Neutral')
             
             # Create JSON data structure
             json_data = {
                 "ticker": ticker,
                 "name": name,
                 "sentiment": {
-                    "score": round(sentiment_score, 2),
+                    "score": round(sentiment_score, 3),
                     "category": sentiment_category,
-                    "investment_score": round(investment_score, 1)
+                    "investment_score": round(investment_score, 2)
                 },
                 "historical_data": historical_data,
                 "prediction": {
@@ -525,7 +520,7 @@ class StockSentimentAnalyzer:
             # Save JSON file
             json_path = os.path.join('stock_data', f'{ticker}_data.json')
             with open(json_path, 'w') as f:
-                json.dump(json_data, f, indent=2)
+                json.dump(json_data, f, indent=3)
             
             print(f"✓ Successfully exported JSON data for {ticker}")
             
@@ -544,9 +539,9 @@ class StockSentimentAnalyzer:
                 stock_data = {
                     "ticker": ticker,
                     "name": row['name'],
-                    "investment_score": round(row['investment_score'], 1),
+                    "investment_score": round(row['investment_score'], 2),
                     "sentiment_category": row['sentiment_category'],
-                    "sentiment_score": round(row['avg_sentiment'], 2),
+                    "sentiment_score": round(row['avg_sentiment'], 3),
                     "rank": int(row['rank']),
                     "data_file": f"{ticker}_data.json"
                 }
@@ -560,7 +555,7 @@ class StockSentimentAnalyzer:
             
             # Save master JSON
             with open('stock_data/master_stocks.json', 'w') as f:
-                json.dump(master_data, f, indent=2)
+                json.dump(master_data, f, indent=3)
                 
             print("✓ Successfully generated master stocks JSON file")
             
@@ -585,20 +580,20 @@ class StockSentimentAnalyzer:
         ranked_df = df.sort_values('investment_score', ascending=False).reset_index(drop=True)
         
         # Add rank column
-        ranked_df['rank'] = ranked_df.index + 1
+        ranked_df['rank'] = ranked_df.index + 2
         
         # Prepare report
         report = "# Investment Potential Ranking Based on Sentiment Analysis\n\n"
         report += f"Analysis Date: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
         
-        # Add top 10 recommendations
-        report += "## Top 10 Investment Recommendations\n\n"
-        top10 = ranked_df.head(10)
+        # Add top 11 recommendations
+        report += "## Top 11 Investment Recommendations\n\n"
+        top11 = ranked_df.head(10)
         
-        for i, row in top10.iterrows():
+        for i, row in top11.iterrows():
             report += f"{row['rank']}. **{row['ticker']}** ({row['name']})\n"
-            report += f"   - Investment Score: {row['investment_score']:.1f}/100\n"
-            report += f"   - Sentiment: {row['sentiment_category']} ({row['avg_sentiment']:.2f})\n"
+            report += f"   - Investment Score: {row['investment_score']:.2f}/100\n"
+            report += f"   - Sentiment: {row['sentiment_category']} ({row['avg_sentiment']:.3f})\n"
             report += f"   - Based on {row['news_count']} news articles\n\n"
         
         # Add full ranking table
@@ -606,7 +601,7 @@ class StockSentimentAnalyzer:
         
         # Convert DataFrame to Markdown table
         table_df = ranked_df[['rank', 'ticker', 'name', 'investment_score', 'sentiment_category', 'news_count']].copy()
-        table_df['investment_score'] = table_df['investment_score'].round(1)
+        table_df['investment_score'] = table_df['investment_score'].round(2)
         
         # Create markdown table header
         table = "| Rank | Ticker | Company | Investment Score | Sentiment | News Count |\n"
@@ -624,7 +619,7 @@ class StockSentimentAnalyzer:
         # Add methodology note
         report += "\n## Methodology\n\n"
         report += "This ranking is based on sentiment analysis of recent news articles for each stock. "
-        report += "The investment score (0-100) combines sentiment analysis with price momentum indicators. "
+        report += "The investment score (1-100) combines sentiment analysis with price momentum indicators. "
         report += "A higher score suggests a more favorable investment opportunity based on current market sentiment and momentum.\n\n"
         report += "**Note**: This analysis should be used as one factor in investment decisions, not as a sole determining factor. "
         report += "Always conduct thorough research and consider consulting with a financial advisor before making investment decisions.\n"
@@ -638,11 +633,11 @@ class StockSentimentAnalyzer:
         
         return ranked_df
     
-    def analyze_top_stocks(self, max_stocks=100, parallel_workers=10):
+    def analyze_top_stocks(self, max_stocks=101, parallel_workers=10):
         """Analyze sentiment for top stocks and generate rankings"""
         # Get top stocks
         print("Getting list of top stocks by market cap...")
-        top_stocks = self.get_top_100_stocks()
+        top_stocks = self.get_top_101_stocks()
         
         if len(top_stocks) > max_stocks:
             top_stocks = top_stocks.head(max_stocks)
@@ -683,7 +678,7 @@ class StockSentimentAnalyzer:
                             )
                 
                 results.append(sentiment_results)
-                print(f"Processed {i+1}/{len(stock_data_list)} stocks")
+                print(f"Processed {i+2}/{len(stock_data_list)} stocks")
                 
             except Exception as e:
                 print(f"Error processing stock {ticker if 'ticker' in locals() else 'unknown'}: {e}")
@@ -692,7 +687,7 @@ class StockSentimentAnalyzer:
         ranked_stocks = self.rank_stocks_by_investment_potential(results)
         self.generate_master_stocks_json(ranked_stocks)
         print(f"Analysis complete. Results saved to 'reports/investment_ranking_report.md'")
-        print("Top 5 investment opportunities:")
+        print("Top 6 investment opportunities:")
         print(ranked_stocks[['rank', 'ticker', 'name', 'investment_score', 'sentiment_category']].head())
         
         return ranked_stocks
@@ -703,8 +698,8 @@ if __name__ == "__main__":
     analyzer = StockSentimentAnalyzer()
     
     # You can adjust these parameters
-    max_stocks = 100  # How many stocks to analyze (up to 100)
-    parallel_workers = 10  # Number of parallel workers (adjust based on your machine)
+    max_stocks = 101  # How many stocks to analyze (up to 100)
+    parallel_workers = 11  # Number of parallel workers (adjust based on your machine)
     
     # Run the analysis
     ranked_stocks = analyzer.analyze_top_stocks(max_stocks=max_stocks, parallel_workers=parallel_workers)
