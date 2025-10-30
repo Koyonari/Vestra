@@ -1,6 +1,6 @@
 ## Vestra
 
-### Invest Extra
+### Still a WIP
 
 Vestra is a web application that does sentiment analysis on dozens of articles by taking live data through webscraping, according to the top 500 stocks, and then using the sentiment analysis to determine if the stock is a good investment.
 
